@@ -1,0 +1,6 @@
+user_id,post_id,time_min,action,influence
+U1,P1,0,upload,0.9
+U2,P1,2,share,0.7
+U3,P1,4,share,0.4
+U4,P1,7,share,0.6
+U5,P1,10,reshare,0.8
