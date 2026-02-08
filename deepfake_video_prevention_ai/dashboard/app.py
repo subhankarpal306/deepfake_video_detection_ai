@@ -252,90 +252,88 @@ with c_col2:
 if analyze_clicked and video_file:
     with st.spinner("Processing media via Neural Engine..."):
         results = analyze(video_file, metadata_file)
-    
+
     st.divider()
-    
-    # Header
+
+    # ---------------- HEADER ----------------
     res_col1, res_col2 = st.columns([2, 1])
+
     with res_col1:
         st.subheader("Analysis Results")
+
     with res_col2:
-        st.markdown(f"<div style='text-align: right; color: #71717A;'>Analysis ID: {random.randint(10000, 99999)}</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div style='text-align: right; color: #71717A;'>"
+            f"Analysis ID: {random.randint(10000, 99999)}</div>",
+            unsafe_allow_html=True
+        )
 
-    # Main Dashboard
-    m_col1, m_col2, m_col3 = st.columns([1, 1, 1])
-    
-    # Column 1: Risk Decision
-    with m_col1:
-        st.markdown("### Risk Level")
-        color = "#EF4444" if results['risk_level'] == "HIGH" else "#F59E0B" if results['risk_level'] == "MEDIUM" else "#10B981"
-        
-        st.markdown(f"""
-            <div style='
-                background-color: {color}20; 
-                border: 2px solid {color}; 
-                border-radius: 12px; 
-                padding: 40px 20px; 
-                text-align: center;
-                margin-top: 10px;
-            '>
-                <h1 style='color: {color}; font-size: 3.5rem; margin: 0;'>{results['risk_level']}</h1>
-                <p style='color: {color}; font-weight: 600; margin-top: 10px;'>IMMEDIATE ATTENTION REQUIRED</p>
+    # ---------------- METRICS ----------------
+    m1, m2, m3 = st.columns(3)
+
+    with m1:
+        st.markdown(
+            f"""
+            <div class='metric'>
+                <h2>{results['deepfake_probability']:.2f}</h2>
+                <p>Deepfake Probability</p>
             </div>
-        """, unsafe_allow_html=True)
-        
-    # Column 2: Metrics
-    with m_col2:
-        st.markdown("### Threat Metrics")
-        st.metric("Deepfake Probability", f"{results['deepfake_probability']:.1f}%", delta="High Confidence", delta_color="inverse")
-        st.metric("Virality Potential", f"{results['virality_potential']:.1f}%", delta="Trending Up", delta_color="inverse")
-        st.metric("Audio Artifacts", results['audio_artifacts'])
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Column 3: Visual Gauge (Replaced Plotly with HTML/Progress)
-    with m_col3:
-        st.markdown("### Overall Risk Score")
-        
-        score = results['final_risk_score']
-        st.markdown(f"""
-            <div style='text-align: center; padding: 20px 0;'>
-                <span style='font-size: 3rem; font-weight: 700; color: white;'>{int(score)}</span>
-                <span style='font-size: 1.5rem; color: #71717A;'>/100</span>
+    with m2:
+        st.markdown(
+            f"""
+            <div class='metric'>
+                <h2>{results['virality_probability']:.2f}</h2>
+                <p>Virality Probability</p>
             </div>
-        """, unsafe_allow_html=True)
-        
-        st.progress(int(score) / 100)
-        st.markdown(f"<p style='text-align: center; font-size: 0.8rem; margin-top: 5px;'>Confidence Score</p>", unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True
+        )
 
+    with m3:
+        st.markdown(
+            f"""
+            <div class='metric'>
+                <h2>{results['final_risk_score']:.2f}</h2>
+                <p>Final Risk Score</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # 7. ACTIONABLE RECOMMENDATIONS
-    st.subheader("Recommended Actions")
-    
-    if results['risk_level'] == "HIGH":
-        st.markdown("""
-        <div class="recommendation-card">
-            <h4 style="color: #EF4444; margin: 0;">🛑 Block & Takedown</h4>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Issue immediate API takedown request to host platform. Content violates synthetic media policy.</p>
-        </div>
-        <div class="recommendation-card" style="border-left-color: #F59E0B;">
-            <h4 style="color: #F59E0B; margin: 0;">⚠️ Notify Trust & Safety</h4>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Escalate to T&S team #synthetic-media-response for forensic review.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    elif results['risk_level'] == "MEDIUM":
-        st.markdown("""
-        <div class="recommendation-card" style="border-left-color: #F59E0B;">
-            <h4 style="color: #F59E0B; margin: 0;">⚠️ Add Content Label</h4>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Apply "Generated Media" context label to video player.</p>
-        </div>
-        <div class="recommendation-card" style="border-left-color: #3B82F6;">
-            <h4 style="color: #3B82F6; margin: 0;">👁️ Human Review</h4>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Queue for human moderator review within 4 hours.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="recommendation-card" style="border-left-color: #10B981;">
-            <h4 style="color: #10B981; margin: 0;">✅ Log & Monitor</h4>
-            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Log event ID and continue passive monitoring of spread.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    # ---------------- AI RECOMMENDATIONS ----------------
+    if openai_api_key and OPENAI_AVAILABLE:
+        client = OpenAI(api_key=openai_api_key)
+
+        prompt = f"""
+        Risk Level: {risk}
+        Deepfake Probability: {result['deepfake_probability']}
+        Virality Probability: {result['virality_probability']}
+
+        Give 3 concise recommendations.
+        """
+
+        with st.spinner("Generating AI recommendations..."):
+            response = client.responses.create(
+                model="gpt-4.1-mini",
+                input=prompt
+            )
+
+        st.subheader("🤖 AI Recommendations")
+        st.write(response.output_text)
+
+    elif gemini_api_key and GEMINI_AVAILABLE:
+        genai.configure(api_key=gemini_api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        with st.spinner("Generating AI recommendations..."):
+            response = model.generate_content(prompt)
+
+        st.subheader("🤖 AI Recommendations")
+        st.write(response.text)
+
+# ---------------- FOOTER ----------------
+st.markdown("<div class='footer'>Preventive AI • Hackathon-Ready • Production-Safe</div>", unsafe_allow_html=True)
